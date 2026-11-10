@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useContext, useEffect } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { useDispatch, useSelector } from 'react-redux'
 import { Alert } from 'react-bootstrap'
-import { clearTodoError, fetchTodos } from '../features/todos/todosSlice'
+import { ThemeContext } from '../App'
+import { clearTodoError, fetchTodos, resetTodos } from '../features/todos/todosSlice'
 import { logout } from '../features/auth/authSlice'
 
 const menu = [
@@ -15,22 +16,19 @@ export default function AppLayout() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { items, status, error, loaded } = useSelector((state) => state.todos)
-  const { user } = useSelector((state) => state.auth)
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('mytasks-theme')
-    return saved ? saved === 'dark' : true
-  })
+  const { token, user } = useSelector((state) => state.auth)
+  const { darkMode, setDarkMode } = useContext(ThemeContext)
 
   useEffect(() => {
-    if (!loaded && status === 'idle') {
+    if (!user) {
+      if (loaded || status !== 'idle') dispatch(resetTodos())
+      return
+    }
+
+    if (token && !loaded && status === 'idle') {
       dispatch(fetchTodos())
     }
-  }, [dispatch, loaded, status])
-
-  useLayoutEffect(() => {
-    document.body.dataset.theme = darkMode ? 'dark' : 'light'
-    localStorage.setItem('mytasks-theme', darkMode ? 'dark' : 'light')
-  }, [darkMode])
+  }, [dispatch, loaded, status, token, user])
 
   const unfinished = items.filter((todo) => !todo.completed).length
 
@@ -63,8 +61,17 @@ export default function AppLayout() {
         <div className="sidebar-footer">
           <div className="mini-icon">✦</div>
           <div>
-            <strong>{user?.name || 'Người dùng'}</strong>
-            <small>Bạn còn {unfinished} việc cần làm</small>
+            {user ? (
+              <>
+                <strong>{user.name}</strong>
+                <small>Bạn còn {unfinished} việc cần làm</small>
+              </>
+            ) : (
+              <>
+                <strong>Chào mừng bạn</strong>
+                <small><Link to="/login">Đăng nhập để bắt đầu</Link></small>
+              </>
+            )}
           </div>
         </div>
       </aside>
@@ -86,9 +93,15 @@ export default function AppLayout() {
             >
               {darkMode ? '☀️' : '🌙'}
             </button>
-            <span className="user-chip">{user?.email || 'demo@mytasks.com'}</span>
-            <Link to="/tasks/new" className="btn btn-brand">+ Thêm công việc Cần Làm</Link>
-            <button type="button" className="btn btn-ghost" onClick={handleLogout}>Đăng xuất</button>
+            {user ? (
+              <>
+                <span className="user-chip">{user.email}</span>
+                <Link to="/tasks/new" className="btn btn-brand">+ Thêm công việc</Link>
+                <button type="button" className="btn btn-ghost" onClick={handleLogout}>Đăng xuất</button>
+              </>
+            ) : (
+              <Link to="/login" className="btn btn-brand">Đăng nhập</Link>
+            )}
           </div>
         </header>
         <nav className="mobile-nav" aria-label="Điều hướng trên điện thoại">

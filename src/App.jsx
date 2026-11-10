@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Navigate, Route, Routes } from 'react-router'
+import { createContext, useEffect, useLayoutEffect, useState } from 'react'
+import { Navigate, Outlet, Route, Routes } from 'react-router'
 import { useDispatch, useSelector } from 'react-redux'
 import AppLayout from './components/AppLayout'
 import Dashboard from './pages/Dashboard'
@@ -9,7 +9,9 @@ import TaskDetail from './pages/TaskDetail'
 import LoginPage from './pages/Login'
 import { fetchCurrentUser } from './features/auth/authSlice'
 
-function ProtectedRoute({ children }) {
+export const ThemeContext = createContext(null)
+
+function ProtectedRoute() {
   const { token, user } = useSelector((state) => state.auth)
 
   if (!token) {
@@ -20,12 +22,18 @@ function ProtectedRoute({ children }) {
     return <div className="empty-state">Đang xác thực người dùng...</div>
   }
 
-  return children
+  return <Outlet />
 }
 
 export default function App() {
   const dispatch = useDispatch()
   const { token, user } = useSelector((state) => state.auth)
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('mytasks-theme') !== 'light')
+
+  useLayoutEffect(() => {
+    document.body.dataset.theme = darkMode ? 'dark' : 'light'
+    localStorage.setItem('mytasks-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
 
   useEffect(() => {
     if (token && !user) {
@@ -34,18 +42,21 @@ export default function App() {
   }, [dispatch, token, user])
 
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/tasks" element={<TaskList />} />
-        <Route path="/completed" element={<TaskList completedOnly />} />
-        <Route path="/tasks/new" element={<TaskForm />} />
-        <Route path="/tasks/:id" element={<TaskDetail />} />
-        <Route path="/tasks/:id/edit" element={<TaskForm />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <ThemeContext.Provider value={{ darkMode, setDarkMode }}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/tasks" element={<TaskList />} />
+            <Route path="/completed" element={<TaskList completedOnly />} />
+            <Route path="/tasks/new" element={<TaskForm />} />
+            <Route path="/tasks/:id" element={<TaskDetail />} />
+            <Route path="/tasks/:id/edit" element={<TaskForm />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </ThemeContext.Provider>
   )
 }

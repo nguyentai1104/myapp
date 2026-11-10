@@ -115,8 +115,9 @@ async function initDatabase() {
 
 app.use(cors({
   origin: [
-    'http://localhost:5173',
-    'https://your-frontend.vercel.app'
+    /^http:\/\/localhost:\d+$/,
+    /^http:\/\/127\.0\.0\.1:\d+$/,
+    'https://your-frontend.vercel.app',
   ],
   credentials: true
 }))
@@ -326,6 +327,6 @@ app.delete('/api/todos/:id', authMiddleware, async (req, res) => {
 
 await initDatabase()
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`MyTasks API running on http://0.0.0.0:${port}`)
+app.listen(port, () => {
+  console.log(`MyTasks API running on http://localhost:${port}`)
 })

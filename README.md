@@ -1,6 +1,6 @@
-# MyTasks - To-Do List (đúng 7 yêu cầu bắt buộc)
+# MyTasks - To-Do List
 
-Ứng dụng ReactJS quản lý công việc: tổng quan, xem danh sách, thêm, sửa, xóa, đánh dấu hoàn thành, xem chi tiết, tìm kiếm, lọc và sắp xếp.
+Ứng dụng quản lý công việc với React, Redux, Express, SQLite và JWT: tổng quan, xem danh sách, thêm, sửa, xóa, đánh dấu hoàn thành, xem chi tiết, tìm kiếm, lọc và sắp xếp.
 
 ## 1. Cách chạy trên Windows / VS Code
 
@@ -9,37 +9,32 @@
 1. Giải nén thư mục `todo-list-7-diem`.
 2. Trong VS Code, `File > Open Folder...` rồi chọn thư mục trên.
 3. Mở `Terminal > New Terminal`.
-4. Nhập lần lượt:
+4. Cài dependencies và chạy cả frontend lẫn backend:
 
    ```bash
    npm install
    npm run dev
    ```
 
-5. Mở đường dẫn do Vite hiện trong terminal (thường là `http://localhost:5173`).
+5. Mở `http://localhost:5173`. Lệnh `npm run dev` khởi động Vite và API server cùng lúc; giữ terminal chạy khi sử dụng ứng dụng.
 
-Để thử bản production:
+API mặc định chạy tại `http://localhost:4000`; URL frontend được cấu hình trong `.env` qua `VITE_API_URL`. Nếu chạy riêng từng phần, dùng hai terminal:
+
+```bash
+npm run server
+npm run dev
+```
+
+> Nếu có lỗi về phiên bản Node.js, hãy nâng cấp Node.js và chạy lại `npm install`.
+
+Để thử bản production của frontend:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-> Nếu có lỗi về phiên bản Node.js, hãy nâng cấp Node.js và chạy lại `npm install`.
-
-## 2. Đối chiếu 7 điểm bắt buộc
-
-| Điểm | Yêu cầu | File/vị trí |
-|---|---|---|
-| 1 | Vite | `vite.config.js`, `package.json` |
-| 2 | ReactJS mới | `package.json`, `src/main.jsx` |
-| 3 | React UI Library (React-Bootstrap) | `src/pages/TaskForm.jsx`, `src/pages/TaskList.jsx`, `src/components/AppLayout.jsx` (`Form`, `Button`, `Alert`) |
-| 4 | React Router | `src/App.jsx`, `src/components/AppLayout.jsx` |
-| 5 | Axios gọi API | `src/api/todoApi.js`, `src/features/todos/todosSlice.js` |
-| 6 | `VITE_API_URL` trong `.env` | `.env`, `src/api/todoApi.js` |
-| 7 | Redux quản lý shared state | `src/app/store.js`, `src/features/todos/todosSlice.js`, `src/main.jsx` |
-
-Ba mục cộng điểm backend + database + JWT chưa làm theo yêu cầu.
+Tài khoản demo được tạo tự động khi API khởi động lần đầu: `demo@mytasks.com` / `demo123`.
 
 ## 3. Cấu trúc folder
 
@@ -68,25 +63,21 @@ todo-list-7-diem/
 
 ## 4. Cách app hoạt động
 
-- Lần đầu mở: `GET /todos?userId=1` qua Axios để tải 20 dữ liệu mẫu.
-- Thêm: `POST /todos` qua Axios, cập nhật Redux.
-- Sửa: `PATCH /todos/:id` đối với công việc từ API, cập nhật Redux.
-- Xóa: `DELETE /todos/:id` đối với công việc từ API, cập nhật Redux.
-- `useSelector` đọc danh sách từ store để cập nhật ở mọi trang.
-- `store.subscribe` lưu danh sách Redux vào localStorage để không mất khi F5.
-
-**LƯU Ý:** JSONPlaceholder là API giả lập: `POST/PATCH/DELETE` được phản hồi thành công nhưng **không ghi vào server**. Đối với công việc mới có ID `local-*`, lần sửa/xóa sau đó chỉ cập nhật Redux/localStorage. Mọi dữ liệu được lưu riêng trên trình duyệt, không đồng bộ qua máy khác. Không có backend và database riêng; đây là chủ đích để chỉ làm 7 yêu cầu bắt buộc.
+- Frontend gọi REST API qua Axios với URL `VITE_API_URL`.
+- Người dùng đăng ký/đăng nhập; JWT được gửi trong header `Authorization`.
+- API dùng SQLite để lưu tài khoản và công việc; công việc được giới hạn theo người dùng đã xác thực.
+- Redux Toolkit quản lý trạng thái công việc và cập nhật giao diện sau các thao tác CRUD.
+- API có endpoint kiểm tra trạng thái `GET /api/health`.
 
 ## 5. Các bước kiểm tra khi nộp bài
 
-1. Chạy `npm run dev` và xem trang `/`.
-2. Trang `/tasks`: thấy dữ liệu từ API, tìm kiếm, lọc theo hoàn thành/chưa hoàn thành.
-3. Vào `/tasks/new`, thêm công việc, quay lại danh sách.
-4. Chỉnh sửa, đánh dấu hoàn thành và xóa công việc.
-5. Vào `/completed` để xem những việc đã xong.
-6. Bấm F5: dữ liệu vừa thay đổi vẫn còn do localStorage.
-7. Mở DevTools > Network: xem các request Axios.
-8. Mở Redux DevTools (nếu có): kiểm tra `todos.items` và các action.
+1. Chạy `npm run dev` và mở `http://localhost:5173`.
+2. Đăng nhập bằng tài khoản demo hoặc tạo tài khoản mới; nếu gặp `ERR_CONNECTION_REFUSED` ở cổng 4000, kiểm tra API server đã được khởi động.
+3. Trang `/tasks`: xem dữ liệu từ API, tìm kiếm, lọc theo hoàn thành/chưa hoàn thành.
+4. Vào `/tasks/new`, thêm công việc, quay lại danh sách.
+5. Chỉnh sửa, đánh dấu hoàn thành và xóa công việc.
+6. Vào `/completed` để xem những việc đã xong.
+7. Mở DevTools > Network để xem các request Axios; Redux DevTools (nếu có) để kiểm tra `todos.items` và các action.
 
 ## 6. Ghi chú về phiên bản
 
