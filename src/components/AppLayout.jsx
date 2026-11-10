@@ -87,7 +87,7 @@ export default function AppLayout() {
               {darkMode ? '☀️' : '🌙'}
             </button>
             <span className="user-chip">{user?.email || 'demo@mytasks.com'}</span>
-            <Link to="/tasks/new" className="btn btn-brand">+ Thêm công việc</Link>
+            <Link to="/tasks/new" className="btn btn-brand">+ Thêm công việc Cần Làm</Link>
             <button type="button" className="btn btn-ghost" onClick={handleLogout}>Đăng xuất</button>
           </div>
         </header>
