@@ -40,6 +40,9 @@ export const registerUser = createAsyncThunk('auth/register', async (payload, { 
 export const updateProfile = createAsyncThunk('auth/updateProfile', async (payload, { rejectWithValue }) => {
   try {
     const { data } = await todoApi.patch('/auth/profile', payload)
+    if (payload.avatar !== undefined && data.user?.avatar !== payload.avatar) {
+      return rejectWithValue('Backend chưa hỗ trợ ảnh đại diện. Hãy khởi động lại API bằng cách dừng rồi chạy lại npm run dev.')
+    }
     return data.user
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Cập nhật hồ sơ thất bại.')

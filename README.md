@@ -57,7 +57,7 @@ SMTP_FROM=MyTasks <no-reply@example.com>
 - Tạo công việc theo chu kỳ ngày/tuần/tháng; khi hoàn tất, ứng dụng tạo công việc tiếp theo và giữ lại mục đã hoàn thành.
 - Thêm danh mục và tối đa 10 nhãn; tìm kiếm theo tên, mô tả, danh mục hoặc nhãn, lọc theo danh mục.
 - Mục **Lịch** hiển thị công việc theo ngày đến hạn.
-- Mục **Tài khoản** cho phép đổi tên, đổi mật khẩu, tải bản sao lưu JSON, xuất CSV và nhập JSON (tối đa 500 việc mỗi lần; dữ liệu được thêm vào danh sách hiện có).
+- Mục **Tài khoản** cho phép đổi tên, tải ảnh đại diện PNG/JPEG/WebP tối đa 1 MB, đổi mật khẩu, tải bản sao lưu JSON, xuất CSV và nhập JSON (tối đa 500 việc mỗi lần; dữ liệu được thêm vào danh sách hiện có).
 - Chuông nhắc việc hiển thị các mục quá hạn, đến hạn hôm nay và trong 3 ngày tới.
 
 ## 3. Cấu trúc folder

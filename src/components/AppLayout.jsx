@@ -75,7 +75,9 @@ export default function AppLayout() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="mini-icon">✦</div>
+          {user?.avatar
+            ? <img className="mini-icon sidebar-avatar" src={user.avatar} alt="" />
+            : <div className="mini-icon">{user?.name?.trim().charAt(0).toUpperCase() || '✦'}</div>}
           <div>
             {user ? (
               <>
@@ -148,7 +150,12 @@ export default function AppLayout() {
                     </section>
                   )}
                 </div>
-                <span className="user-chip">{user.email}</span>
+                <Link to="/account" className="user-chip" aria-label="Mở tài khoản">
+                  {user.avatar
+                    ? <img className="topbar-avatar" src={user.avatar} alt="" />
+                    : <span className="topbar-avatar topbar-avatar-fallback" aria-hidden="true">{user.name?.trim().charAt(0).toUpperCase() || '?'}</span>}
+                  {user.email}
+                </Link>
                 <Link to="/tasks/new" className="btn btn-brand">+ Thêm công việc</Link>
                 <button type="button" className="btn btn-ghost" onClick={handleLogout}>Đăng xuất</button>
               </>

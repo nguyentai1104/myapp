@@ -123,9 +123,15 @@ async function initDatabase() {
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
+      avatar TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `)
+
+  const userColumns = await all('PRAGMA table_info(users)')
+  if (!userColumns.some((column) => column.name === 'avatar')) {
+    await run('ALTER TABLE users ADD COLUMN avatar TEXT')
+  }
 
   await run(`
     CREATE TABLE IF NOT EXISTS tasks (
@@ -191,7 +197,7 @@ app.use(cors({
   ],
   credentials: true
 }))
-app.use(express.json())
+app.use(express.json({ limit: '2mb' }))
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, message: 'MyTasks API is running' })
@@ -222,7 +228,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     const passwordHash = bcrypt.hashSync(String(password), 10)
     const created = await run('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)', [String(name).trim(), normalizedEmail, passwordHash])
-    const user = { id: created.id, name: String(name).trim(), email: normalizedEmail }
+    const user = { id: created.id, name: String(name).trim(), email: normalizedEmail, avatar: null }
 
     res.status(201).json({
       token: issueToken(user),
@@ -254,7 +260,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' })
     }
 
-    const safeUser = { id: user.id, name: user.name, email: user.email }
+    const safeUser = { id: user.id, name: user.name, email: user.email, avatar: user.avatar || null }
     return res.json({
       token: issueToken(safeUser),
       user: safeUser,
@@ -366,11 +372,11 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
-    const user = await get('SELECT id, name, email FROM users WHERE id = ?', [req.user.id])
+    const user = await get('SELECT id, name, email, avatar FROM users WHERE id = ?', [req.user.id])
     if (!user) {
       return res.status(404).json({ message: 'Người dùng không tồn tại.' })
     }
-    res.json({ user: { id: user.id, name: user.name, email: user.email } })
+    res.json({ user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar || null } })
   } catch (error) {
     console.error('Get current user error:', error)
     res.status(500).json({ message: 'Không thể lấy thông tin người dùng.' })
@@ -378,14 +384,48 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 })
 
 app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
-  const name = String(req.body?.name || '').trim()
-  if (name.length < 2 || name.length > 80) {
+  if (req.body?.name !== undefined && typeof req.body.name !== 'string') {
+    return res.status(400).json({ message: 'Họ tên không hợp lệ.' })
+  }
+  const name = req.body?.name === undefined ? undefined : req.body.name.trim()
+  const avatar = req.body?.avatar
+  if (name !== undefined && (name.length < 2 || name.length > 80)) {
     return res.status(400).json({ message: 'Họ tên phải có từ 2 đến 80 ký tự.' })
+  }
+  if (avatar !== undefined && avatar !== null) {
+    const match = typeof avatar === 'string' && avatar.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/)
+    if (!match) {
+      return res.status(400).json({ message: 'Ảnh đại diện phải là PNG, JPEG hoặc WebP hợp lệ.' })
+    }
+
+    const imageBytes = Buffer.from(match[2], 'base64')
+    if (imageBytes.length > 1024 * 1024 || imageBytes.toString('base64') !== match[2]) {
+      return res.status(400).json({ message: 'Ảnh đại diện tối đa 1 MB hoặc dữ liệu ảnh không hợp lệ.' })
+    }
+    const isPng = match[1] === 'png' && imageBytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    const isJpeg = match[1] === 'jpeg' && imageBytes[0] === 255 && imageBytes[1] === 216 && imageBytes[2] === 255
+    const isWebp = match[1] === 'webp' && imageBytes.toString('ascii', 0, 4) === 'RIFF' && imageBytes.toString('ascii', 8, 12) === 'WEBP'
+    if (!isPng && !isJpeg && !isWebp) {
+      return res.status(400).json({ message: 'Nội dung tệp không khớp với định dạng ảnh.' })
+    }
   }
 
   try {
-    await run('UPDATE users SET name = ? WHERE id = ?', [name, req.user.id])
-    const user = await get('SELECT id, name, email FROM users WHERE id = ?', [req.user.id])
+    const updates = []
+    const values = []
+    if (name !== undefined) {
+      updates.push('name = ?')
+      values.push(name)
+    }
+    if (avatar !== undefined) {
+      updates.push('avatar = ?')
+      values.push(avatar)
+    }
+    if (!updates.length) {
+      return res.status(400).json({ message: 'Không có thông tin hồ sơ cần cập nhật.' })
+    }
+    await run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, [...values, req.user.id])
+    const user = await get('SELECT id, name, email, avatar FROM users WHERE id = ?', [req.user.id])
     return res.json({ user })
   } catch (error) {
     console.error('Update profile error:', error)

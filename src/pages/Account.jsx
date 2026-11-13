@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Form } from 'react-bootstrap'
 import { useDispatch, useSelector } from 'react-redux'
 import { importTodos } from '../features/todos/todosSlice'
@@ -29,6 +29,7 @@ export default function Account() {
   const { user } = useSelector((state) => state.auth)
   const { items, loaded, status } = useSelector((state) => state.todos)
   const fileInput = useRef(null)
+  const avatarInput = useRef(null)
   const [name, setName] = useState(user?.name || '')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -36,6 +37,10 @@ export default function Account() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    setName(user?.name || '')
+  }, [user?.name])
 
   async function saveProfile(event) {
     event.preventDefault()
@@ -50,6 +55,45 @@ export default function Account() {
     } finally {
       setBusy(false)
     }
+  }
+
+  async function saveAvatar(avatar) {
+    setBusy(true)
+    setError('')
+    setMessage('')
+    try {
+      await dispatch(updateProfile({ name: user?.name, avatar })).unwrap()
+      setMessage(avatar ? 'Ảnh đại diện đã được cập nhật.' : 'Đã xóa ảnh đại diện.')
+    } catch (requestError) {
+      setError(requestError)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function selectAvatar(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setError('Chỉ hỗ trợ ảnh PNG, JPEG hoặc WebP.')
+      return
+    }
+    if (file.size > 1024 * 1024) {
+      setError('Ảnh đại diện không được vượt quá 1 MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        saveAvatar(reader.result)
+      } else {
+        setError('Không thể đọc tệp ảnh đã chọn.')
+      }
+    }
+    reader.onerror = () => setError('Không thể đọc tệp ảnh đã chọn.')
+    reader.readAsDataURL(file)
   }
 
   async function changePassword(event) {
@@ -116,6 +160,22 @@ export default function Account() {
       <div className="account-grid">
         <section className="form-panel account-panel">
           <div className="form-panel-header"><span className="form-header-icon">◎</span><div><h2>Hồ sơ</h2><p>{user?.email}</p></div></div>
+          <div className="avatar-settings">
+            {user?.avatar ? (
+              <img src={user.avatar} className="account-avatar" alt="Ảnh đại diện hiện tại" />
+            ) : (
+              <div className="account-avatar avatar-placeholder" aria-label="Chưa có ảnh đại diện">{(user?.name || '?').trim().charAt(0).toUpperCase()}</div>
+            )}
+            <div className="avatar-actions">
+              <strong>Ảnh đại diện</strong>
+              <span>PNG, JPEG hoặc WebP · tối đa 1 MB</span>
+              <div className="account-actions">
+                <Button variant="outline-primary" onClick={() => avatarInput.current?.click()} disabled={busy}>Chọn ảnh</Button>
+                {user?.avatar && <Button variant="outline-secondary" onClick={() => saveAvatar(null)} disabled={busy}>Xóa ảnh</Button>}
+              </div>
+              <Form.Control ref={avatarInput} type="file" accept="image/png,image/jpeg,image/webp" className="visually-hidden" onChange={selectAvatar} />
+            </div>
+          </div>
           <Form onSubmit={saveProfile}>
             <Form.Group className="mb-3"><Form.Label htmlFor="account-name">Họ và tên</Form.Label><Form.Control id="account-name" value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={80} required /></Form.Group>
             <Button className="btn-brand" type="submit" disabled={busy}>Lưu hồ sơ</Button>
