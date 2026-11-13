@@ -9,6 +9,8 @@ export default function TaskList({ completedOnly = false }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('newest')
+  const [category, setCategory] = useState('all')
+  const categories = useMemo(() => [...new Set(items.map((todo) => todo.category).filter(Boolean))].sort(), [items])
 
   const filteredTodos = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase()
@@ -16,7 +18,9 @@ export default function TaskList({ completedOnly = false }) {
       if (completedOnly && !todo.completed) return false
       if (!completedOnly && filter === 'pending' && todo.completed) return false
       if (!completedOnly && filter === 'completed' && !todo.completed) return false
-      return todo.title.toLocaleLowerCase().includes(normalizedSearch)
+      if (category !== 'all' && todo.category !== category) return false
+      const searchable = [todo.title, todo.description, todo.category, ...(todo.tags || [])].join(' ').toLocaleLowerCase()
+      return searchable.includes(normalizedSearch)
     })
 
     if (sort === 'priority') {
@@ -31,7 +35,7 @@ export default function TaskList({ completedOnly = false }) {
       })
     }
     return result
-  }, [items, search, filter, sort, completedOnly])
+  }, [items, search, filter, sort, completedOnly, category])
 
   return (
     <>
@@ -58,6 +62,12 @@ export default function TaskList({ completedOnly = false }) {
             <option value="priority">Theo độ ưu tiên</option>
             <option value="deadline">Theo hạn hoàn thành</option>
           </Form.Select>
+          {categories.length > 0 && (
+            <Form.Select className="sort-select" value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Lọc theo danh mục">
+              <option value="all">Mọi danh mục</option>
+              {categories.map((item) => <option value={item} key={item}>{item}</option>)}
+            </Form.Select>
+          )}
         </div>
         {!completedOnly && (
           <div className="filter-tabs">

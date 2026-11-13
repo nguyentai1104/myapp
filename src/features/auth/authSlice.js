@@ -37,6 +37,15 @@ export const registerUser = createAsyncThunk('auth/register', async (payload, { 
   }
 })
 
+export const updateProfile = createAsyncThunk('auth/updateProfile', async (payload, { rejectWithValue }) => {
+  try {
+    const { data } = await todoApi.patch('/auth/profile', payload)
+    return data.user
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Cập nhật hồ sơ thất bại.')
+  }
+})
+
 const initialState = {
   token: tokenFromStorage || null,
   user: null,
@@ -105,6 +114,9 @@ const authSlice = createSlice({
         state.user = null
         localStorage.removeItem(STORAGE_KEY)
         setAuthToken(null)
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.user = action.payload
       })
   },
 })

@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { useDispatch, useSelector } from 'react-redux'
 import { Alert } from 'react-bootstrap'
@@ -9,12 +9,15 @@ import { logout } from '../features/auth/authSlice'
 const menu = [
   { path: '/', icon: '◫', label: 'Tổng quan', end: true },
   { path: '/tasks', icon: '☷', label: 'Tất cả công việc' },
+  { path: '/calendar', icon: '▦', label: 'Lịch' },
   { path: '/completed', icon: '✓', label: 'Đã hoàn thành' },
+  { path: '/account', icon: '◎', label: 'Tài khoản' },
 ]
 
 export default function AppLayout() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { items, status, error, loaded } = useSelector((state) => state.todos)
   const { token, user } = useSelector((state) => state.auth)
   const { darkMode, setDarkMode } = useContext(ThemeContext)
@@ -31,6 +34,19 @@ export default function AppLayout() {
   }, [dispatch, loaded, status, token, user])
 
   const unfinished = items.filter((todo) => !todo.completed).length
+  const today = new Date()
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const threeDaysLater = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3)
+  const reminderEndKey = `${threeDaysLater.getFullYear()}-${String(threeDaysLater.getMonth() + 1).padStart(2, '0')}-${String(threeDaysLater.getDate()).padStart(2, '0')}`
+  const reminders = items
+    .filter((todo) => !todo.completed && todo.dueDate && todo.dueDate <= reminderEndKey)
+    .sort((first, second) => first.dueDate.localeCompare(second.dueDate))
+
+  function getReminderLabel(dueDate) {
+    if (dueDate < todayKey) return 'Đã quá hạn'
+    if (dueDate === todayKey) return 'Đến hạn hôm nay'
+    return `Còn ${Math.round((new Date(`${dueDate}T00:00:00`) - new Date(`${todayKey}T00:00:00`)) / 86400000)} ngày`
+  }
 
   function handleLogout() {
     dispatch(logout())
@@ -95,6 +111,43 @@ export default function AppLayout() {
             </button>
             {user ? (
               <>
+                <div className="notification-wrap">
+                  <button
+                    type="button"
+                    className="notification-toggle"
+                    onClick={() => setNotificationsOpen((open) => !open)}
+                    aria-label={`Thông báo công việc${reminders.length ? `, ${reminders.length} việc cần chú ý` : ''}`}
+                    aria-expanded={notificationsOpen}
+                    aria-controls="task-reminders"
+                  >
+                    <span aria-hidden="true">🔔</span>
+                    {reminders.length > 0 && <span className="notification-count">{reminders.length > 99 ? '99+' : reminders.length}</span>}
+                  </button>
+                  {notificationsOpen && (
+                    <section className="notification-panel" id="task-reminders" aria-label="Nhắc việc">
+                      <div className="notification-heading">
+                        <strong>Nhắc việc</strong>
+                        <span>{reminders.length}</span>
+                      </div>
+                      {reminders.length === 0 ? (
+                        <p className="notification-empty">Bạn không có việc nào sắp đến hạn.</p>
+                      ) : (
+                        <ul className="notification-list">
+                          {reminders.map((todo) => (
+                            <li key={todo.id}>
+                              <Link to={`/tasks/${todo.id}`} onClick={() => setNotificationsOpen(false)}>
+                                <span className={`notification-status ${todo.dueDate < todayKey ? 'overdue' : ''}`}>
+                                  {getReminderLabel(todo.dueDate)}
+                                </span>
+                                <strong>{todo.title}</strong>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  )}
+                </div>
                 <span className="user-chip">{user.email}</span>
                 <Link to="/tasks/new" className="btn btn-brand">+ Thêm công việc</Link>
                 <button type="button" className="btn btn-ghost" onClick={handleLogout}>Đăng xuất</button>

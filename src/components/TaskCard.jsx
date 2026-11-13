@@ -46,6 +46,9 @@ export default function TaskCard({ todo }) {
             <span className="priority-dot" />{priorityLabels[todo.priority] || 'Trung bình'}
           </span>
           <span>◷ {formatDate(todo.dueDate)}</span>
+          {todo.category && <span className="task-category">{todo.category}</span>}
+          {todo.repeatRule && todo.repeatRule !== 'none' && <span title="Công việc lặp lại">↻ {({ daily: 'Hằng ngày', weekly: 'Hằng tuần', monthly: 'Hằng tháng' })[todo.repeatRule]}</span>}
+          {(todo.tags || []).map((tag) => <span className="task-tag" key={tag}>{tag}</span>)}
           <span className={todo.completed ? 'text-success' : 'text-muted'}>
             {todo.completed ? '✓ Hoàn thành' : '○ Đang làm'}
           </span>

@@ -7,6 +7,8 @@ import TaskList from './pages/TaskList'
 import TaskForm from './pages/TaskForm'
 import TaskDetail from './pages/TaskDetail'
 import LoginPage from './pages/Login'
+import Calendar from './pages/Calendar'
+import Account from './pages/Account'
 import { fetchCurrentUser } from './features/auth/authSlice'
 
 export const ThemeContext = createContext(null)
@@ -45,11 +47,14 @@ export default function App() {
     <ThemeContext.Provider value={{ darkMode, setDarkMode }}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<LoginPage initialMode="reset" />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/tasks" element={<TaskList />} />
             <Route path="/completed" element={<TaskList completedOnly />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/tasks/new" element={<TaskForm />} />
             <Route path="/tasks/:id" element={<TaskDetail />} />
             <Route path="/tasks/:id/edit" element={<TaskForm />} />

@@ -4,7 +4,7 @@ import { Button, Form, Alert } from 'react-bootstrap'
 import { Link, useNavigate, useParams } from 'react-router'
 import { addTodo, updateTodo } from '../features/todos/todosSlice'
 
-const emptyForm = { title: '', description: '', priority: 'medium', dueDate: '' }
+const emptyForm = { title: '', description: '', priority: 'medium', dueDate: '', category: '', tags: '', repeatRule: 'none' }
 
 export default function TaskForm() {
   const { id } = useParams()
@@ -25,6 +25,9 @@ export default function TaskForm() {
         description: currentTodo.description || '',
         priority: currentTodo.priority || 'medium',
         dueDate: currentTodo.dueDate || '',
+        category: currentTodo.category || '',
+        tags: (currentTodo.tags || []).join(', '),
+        repeatRule: currentTodo.repeatRule || 'none',
       })
     }
   }, [editing, currentTodo])
@@ -50,7 +53,13 @@ export default function TaskForm() {
 
     setSubmitting(true)
     try {
-      const payload = { ...form, title, description: form.description.trim() }
+      const payload = {
+        ...form,
+        title,
+        description: form.description.trim(),
+        category: form.category.trim(),
+        tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+      }
       if (editing) {
         await dispatch(updateTodo({ id: currentTodo.id, changes: payload })).unwrap()
       } else {
@@ -109,6 +118,24 @@ export default function TaskForm() {
               <label className="form-label" htmlFor="dueDate">Hạn hoàn thành</label>
               <Form.Control id="dueDate" name="dueDate" type="date" value={form.dueDate} onChange={updateField} />
             </div>
+            <div className="col-md-6">
+              <label className="form-label" htmlFor="category">Danh mục</label>
+              <Form.Control id="category" name="category" value={form.category} onChange={updateField} placeholder="Ví dụ: Học tập" maxLength={40} />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label" htmlFor="repeatRule">Lặp lại</label>
+              <Form.Select id="repeatRule" name="repeatRule" value={form.repeatRule} onChange={updateField}>
+                <option value="none">Không lặp</option>
+                <option value="daily">Hằng ngày</option>
+                <option value="weekly">Hằng tuần</option>
+                <option value="monthly">Hằng tháng</option>
+              </Form.Select>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="form-label" htmlFor="tags">Nhãn</label>
+            <Form.Control id="tags" name="tags" value={form.tags} onChange={updateField} placeholder="Ví dụ: gấp, cá nhân, dự án" />
+            <div className="helper-text">Phân cách tối đa 10 nhãn bằng dấu phẩy</div>
           </div>
           <div className="form-actions">
             <Link to="/tasks" className="btn btn-outline-secondary px-4">Hủy</Link>

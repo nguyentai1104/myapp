@@ -31,10 +31,19 @@ export const addTodo = createAsyncThunk('todos/add', async (draft, { rejectWithV
   }
 })
 
+export const importTodos = createAsyncThunk('todos/import', async (tasks, { rejectWithValue }) => {
+  try {
+    const { data } = await todoApi.post('/todos/import', { tasks })
+    return data
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Nhập dữ liệu thất bại.')
+  }
+})
+
 export const updateTodo = createAsyncThunk('todos/update', async ({ id, changes }, { rejectWithValue }) => {
   try {
     const { data } = await todoApi.patch(`/todos/${id}`, changes)
-    return { id, changes: data }
+    return { id, changes: data.task || data, nextTask: data.nextTask || null }
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Cập nhật công việc thất bại.')
   }
@@ -86,6 +95,12 @@ const todosSlice = createSlice({
       .addCase(updateTodo.fulfilled, (state, action) => {
         const todo = state.items.find((item) => item.id === action.payload.id)
         if (todo) Object.assign(todo, action.payload.changes)
+        if (action.payload.nextTask) state.items.unshift(action.payload.nextTask)
+        state.error = null
+      })
+      .addCase(importTodos.fulfilled, (state, action) => {
+        state.items = [...action.payload, ...state.items]
+        state.loaded = true
         state.error = null
       })
       .addCase(deleteTodo.fulfilled, (state, action) => {
@@ -94,7 +109,7 @@ const todosSlice = createSlice({
       })
       .addMatcher(
         (action) =>
-          ['todos/add/rejected', 'todos/update/rejected', 'todos/delete/rejected'].includes(action.type),
+          ['todos/add/rejected', 'todos/import/rejected', 'todos/update/rejected', 'todos/delete/rejected'].includes(action.type),
         (state, action) => {
           state.error = action.payload || 'Thao tác không thành công.'
         },

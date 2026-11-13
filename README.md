@@ -1,6 +1,6 @@
 # MyTasks - To-Do List
 
-Ứng dụng quản lý công việc với React, Redux, Express, SQLite và JWT: tổng quan, xem danh sách, thêm, sửa, xóa, đánh dấu hoàn thành, xem chi tiết, tìm kiếm, lọc và sắp xếp.
+Ứng dụng quản lý công việc với React, Redux, Express, SQLite và JWT: tổng quan, danh sách/lịch, thêm, sửa, xóa, đánh dấu hoàn thành, công việc lặp lại, danh mục/nhãn, nhắc hạn, hồ sơ, đổi/khôi phục mật khẩu và sao lưu dữ liệu.
 
 ## 1. Cách chạy trên Windows / VS Code
 
@@ -35,6 +35,30 @@ npm run preview
 ```
 
 Tài khoản demo được tạo tự động khi API khởi động lần đầu: `demo@mytasks.com` / `demo123`.
+
+### Đặt lại mật khẩu
+
+Trang đăng nhập có liên kết **Quên mật khẩu?**. API phát hành liên kết đặt lại dùng một lần, hết hạn sau 30 phút. Để gửi email thật, cấu hình các biến môi trường sau cho tiến trình backend:
+
+```env
+FRONTEND_URL=http://localhost:5173
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+SMTP_FROM=MyTasks <no-reply@example.com>
+```
+
+Đặt các giá trị trên trong `.env.local` (đã được Git bỏ qua) hoặc cấu hình trực tiếp cho tiến trình backend; tránh lưu thông tin SMTP trong `.env` được theo dõi bởi Git. `SMTP_FROM` là tùy chọn (mặc định dùng `SMTP_USER`); `SMTP_SECURE` mặc định bật cho cổng 465. Khi chạy phát triển mà chưa cấu hình SMTP, liên kết đặt lại chỉ được in trong terminal chạy API. Môi trường production yêu cầu cấu hình SMTP và sẽ không phát hành liên kết qua log.
+
+### Tính năng quản lý
+
+- Tạo công việc theo chu kỳ ngày/tuần/tháng; khi hoàn tất, ứng dụng tạo công việc tiếp theo và giữ lại mục đã hoàn thành.
+- Thêm danh mục và tối đa 10 nhãn; tìm kiếm theo tên, mô tả, danh mục hoặc nhãn, lọc theo danh mục.
+- Mục **Lịch** hiển thị công việc theo ngày đến hạn.
+- Mục **Tài khoản** cho phép đổi tên, đổi mật khẩu, tải bản sao lưu JSON, xuất CSV và nhập JSON (tối đa 500 việc mỗi lần; dữ liệu được thêm vào danh sách hiện có).
+- Chuông nhắc việc hiển thị các mục quá hạn, đến hạn hôm nay và trong 3 ngày tới.
 
 ## 3. Cấu trúc folder
 
