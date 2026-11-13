@@ -6,7 +6,7 @@
 
 **Yêu cầu:** Node.js bản mới đáp ứng Vite 8 (nên dùng Node.js 22.12+).
 
-1. Giải nén thư mục `todo-list-7-diem`.
+1. Giải nén thư mục `se194164-todolist`.
 2. Trong VS Code, `File > Open Folder...` rồi chọn thư mục trên.
 3. Mở `Terminal > New Terminal`.
 4. Cài dependencies và chạy cả frontend lẫn backend:
